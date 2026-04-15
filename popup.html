@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Image Extractor Pro</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <!-- Header -->
+    <div class="header">
+      <div class="header-top">
+        <div class="logo">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <rect width="28" height="28" rx="8" fill="url(#logoGrad)" />
+            <path
+              d="M7 10C7 8.34 8.34 7 10 7H18C19.66 7 21 8.34 21 10V18C21 19.66 19.66 21 18 21H10C8.34 21 7 19.66 7 18V10Z"
+              stroke="white"
+              stroke-width="1.5"
+            />
+            <circle cx="11.5" cy="12" r="1.5" fill="white" />
+            <path d="M7 17L11 14L14 16.5L17 13L21 17" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            <defs>
+              <linearGradient id="logoGrad" x1="0" y1="0" x2="28" y2="28">
+                <stop stop-color="#6366F1" />
+                <stop offset="1" stop-color="#EC4899" />
+              </linearGradient>
+            </defs>
+          </svg>
+          <h1>Image Extractor</h1>
+        </div>
+        <span class="badge" id="imageCount">0</span>
+      </div>
+      <p class="subtitle">Extract &amp; download images from this page</p>
+    </div>
+
+    <!-- Controls Bar -->
+    <div class="controls">
+      <div class="controls-left">
+        <div class="filter-group">
+          <label for="minWidth">Min size</label>
+          <select id="minWidth">
+            <option value="0">All</option>
+            <option value="50">50px</option>
+            <option value="100" selected>100px</option>
+            <option value="200">200px</option>
+            <option value="500">500px</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="imageType">Type</label>
+          <select id="imageType">
+            <option value="all">All</option>
+            <option value="jpg">JPG</option>
+            <option value="png">PNG</option>
+            <option value="gif">GIF</option>
+            <option value="webp">WebP</option>
+            <option value="svg">SVG</option>
+          </select>
+        </div>
+      </div>
+      <div class="controls-right">
+        <button id="selectAll" class="btn-icon" title="Select All">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <rect x="1" y="1" width="14" height="14" rx="3" stroke="currentColor" stroke-width="1.5" />
+            <path d="M4.5 8L7 10.5L11.5 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
+        <button id="copySelected" class="btn-secondary" title="Copy Selected URLs">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <rect x="5" y="5" width="9" height="9" rx="2" stroke="currentColor" stroke-width="1.5" />
+            <path d="M11 5V3C11 1.9 10.1 1 9 1H3C1.9 1 1 1.9 1 3V9C1 10.1 1.9 11 3 11H5" stroke="currentColor" stroke-width="1.5" />
+          </svg>
+          <span>Copy</span>
+        </button>
+        <button id="downloadSelected" class="btn-primary" title="Download Selected">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M8 2V10M8 10L5 7M8 10L11 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M2 12V13C2 13.55 2.45 14 3 14H13C13.55 14 14 13.55 14 13V12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span>Download</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="loading-state">
+      <div class="spinner"></div>
+      <p>Scanning page for images...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="empty-state" style="display: none">
+      <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+        <rect x="4" y="8" width="40" height="32" rx="4" stroke="#64748B" stroke-width="2" />
+        <circle cx="16" cy="20" r="4" stroke="#64748B" stroke-width="2" />
+        <path d="M4 32L16 24L24 30L32 22L44 32" stroke="#64748B" stroke-width="2" />
+      </svg>
+      <p>No images found on this page</p>
+    </div>
+
+    <!-- Image Grid -->
+    <div id="imageGrid" class="image-grid" style="display: none"></div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <span id="selectedInfo">0 selected</span>
+      <span id="totalInfo">0 images found</span>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
