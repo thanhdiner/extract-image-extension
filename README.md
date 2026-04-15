@@ -6,6 +6,7 @@ A powerful and lightweight Google Chrome extension designed to extract, filter, 
 
 ## Features
 
+- **Deep Scan (Auto-Scroll)**: A toggleable mode to automatically scroll and meticulously extract images from infinite-scroll and virtual DOM pages (like Pinterest or Twitter). Features a configurable scroll count and delay.
 - **Comprehensive Extraction**: Captures images from `<img>` tags, CSS backgrounds, `<picture>` elements, `<video>` posters, and inline SVGs.
 - **Smart Filtering**: Filter extracted images by minimum pixel width or specific file types (JPG, PNG, GIF, WebP, SVG).
 - **Batch Processing**: Select multiple images to download all at once or copy their URLs to the clipboard.

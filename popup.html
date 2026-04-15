@@ -32,6 +32,60 @@
         <span class="badge" id="imageCount">0</span>
       </div>
       <p class="subtitle">Extract &amp; download images from this page</p>
+
+      <!-- Deep Scan Toggle -->
+      <div class="deep-scan-toggle">
+        <div class="toggle-left">
+          <span class="toggle-label">Deep Scan</span>
+          <span class="toggle-hint">Auto-scroll to find hidden images</span>
+        </div>
+        <label class="switch" for="deepScanSwitch">
+          <input type="checkbox" id="deepScanSwitch" />
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Deep Scan Config (hidden by default) -->
+    <div id="deepScanConfig" class="deep-scan-config" style="display: none">
+      <div class="config-row">
+        <div class="config-item">
+          <label for="scrollCount">Scrolls</label>
+          <select id="scrollCount">
+            <option value="5">5</option>
+            <option value="10" selected>10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+        <div class="config-item">
+          <label for="scrollDelay">Delay</label>
+          <select id="scrollDelay">
+            <option value="1000">1s</option>
+            <option value="1500" selected>1.5s</option>
+            <option value="2000">2s</option>
+            <option value="3000">3s</option>
+          </select>
+        </div>
+        <button id="startDeepScan" class="btn-primary btn-scan">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <path d="M8 1V5M8 11V15M1 8H5M11 8H15M3.05 3.05L5.88 5.88M10.12 10.12L12.95 12.95M12.95 3.05L10.12 5.88M5.88 10.12L3.05 12.95" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span>Start Scan</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Deep Scan Progress Overlay -->
+    <div id="deepScanProgress" class="deep-scan-progress" style="display: none">
+      <div class="progress-content">
+        <div class="spinner"></div>
+        <p class="progress-title">Deep Scanning...</p>
+        <p class="progress-detail" id="progressDetail">Scroll 0 / 10</p>
+        <p class="progress-count" id="progressCount">0 images found</p>
+        <button id="stopDeepScan" class="btn-secondary btn-stop">Stop</button>
+      </div>
     </div>
 
     <!-- Controls Bar -->

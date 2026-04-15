@@ -12,14 +12,135 @@ document.addEventListener("DOMContentLoaded", () => {
   const minWidthSelect = document.getElementById("minWidth");
   const imageTypeSelect = document.getElementById("imageType");
 
+  // Deep Scan elements
+  const deepScanSwitch = document.getElementById("deepScanSwitch");
+  const deepScanConfig = document.getElementById("deepScanConfig");
+  const scrollCountSelect = document.getElementById("scrollCount");
+  const scrollDelaySelect = document.getElementById("scrollDelay");
+  const startDeepScanBtn = document.getElementById("startDeepScan");
+  const deepScanProgress = document.getElementById("deepScanProgress");
+  const progressDetail = document.getElementById("progressDetail");
+  const progressCount = document.getElementById("progressCount");
+  const stopDeepScanBtn = document.getElementById("stopDeepScan");
+
   let allImages = [];
   let filteredImages = [];
   let selectedImages = new Set();
   let allSelected = false;
+  let isDeepScanMode = false;
 
-  // Initialize - extract images from the active tab
-  init();
+  // Load saved toggle state, then initialize
+  chrome.storage.local.get(["deepScanEnabled"], (result) => {
+    isDeepScanMode = result.deepScanEnabled || false;
+    deepScanSwitch.checked = isDeepScanMode;
+    deepScanConfig.style.display = isDeepScanMode ? "block" : "none";
 
+    // Only auto-scan in normal mode
+    if (!isDeepScanMode) {
+      init();
+    } else {
+      // In deep scan mode, show a waiting state
+      loadingState.style.display = "none";
+      emptyState.style.display = "none";
+      imageGrid.style.display = "none";
+      showDeepScanReady();
+    }
+  });
+
+  // Toggle Deep Scan mode
+  deepScanSwitch.addEventListener("change", () => {
+    isDeepScanMode = deepScanSwitch.checked;
+    deepScanConfig.style.display = isDeepScanMode ? "block" : "none";
+
+    // Persist toggle state
+    chrome.storage.local.set({ deepScanEnabled: isDeepScanMode });
+
+    if (!isDeepScanMode) {
+      // Switched back to normal mode: do a quick extract
+      loadingState.style.display = "flex";
+      emptyState.style.display = "none";
+      imageGrid.style.display = "none";
+      init();
+    } else {
+      showDeepScanReady();
+    }
+  });
+
+  function showDeepScanReady() {
+    loadingState.style.display = "none";
+    emptyState.style.display = "none";
+    imageGrid.style.display = "none";
+
+    // Show a hint if no images loaded yet
+    if (allImages.length === 0) {
+      emptyState.style.display = "flex";
+      emptyState.querySelector("p").textContent = "Press \"Start Scan\" to begin deep extraction";
+    }
+  }
+
+  // Listen for deep scan progress updates from content script
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message.action === "deepScanProgress") {
+      progressDetail.textContent = `Scroll ${message.current} / ${message.total}`;
+      progressCount.textContent = `${message.imageCount} images found`;
+    }
+  });
+
+  // Start Deep Scan
+  startDeepScanBtn.addEventListener("click", async () => {
+    const scrollCount = parseInt(scrollCountSelect.value);
+    const scrollDelay = parseInt(scrollDelaySelect.value);
+
+    // Show progress overlay
+    deepScanProgress.style.display = "flex";
+    progressDetail.textContent = `Scroll 0 / ${scrollCount}`;
+    progressCount.textContent = "0 images found";
+
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!tab) {
+        deepScanProgress.style.display = "none";
+        showToast("No active tab found");
+        return;
+      }
+
+      chrome.tabs.sendMessage(
+        tab.id,
+        {
+          action: "deepScan",
+          scrollCount: scrollCount,
+          scrollDelay: scrollDelay,
+        },
+        (response) => {
+          deepScanProgress.style.display = "none";
+
+          if (chrome.runtime.lastError || !response || !response.images) {
+            showToast("Deep scan failed");
+            showEmpty();
+            return;
+          }
+
+          allImages = response.images;
+          showToast(`Scan complete! ${allImages.length} images found`);
+          applyFilters();
+        }
+      );
+    } catch (error) {
+      deepScanProgress.style.display = "none";
+      showToast("Deep scan error");
+    }
+  });
+
+  // Stop Deep Scan
+  stopDeepScanBtn.addEventListener("click", async () => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab) {
+      chrome.tabs.sendMessage(tab.id, { action: "stopDeepScan" });
+    }
+    showToast("Scan stopped");
+  });
+
+  // Normal mode init
   async function init() {
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -28,7 +149,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // Send message to content script
       chrome.tabs.sendMessage(tab.id, { action: "extractImages" }, (response) => {
         if (chrome.runtime.lastError || !response || !response.images) {
           showEmpty();
@@ -49,16 +169,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const type = imageTypeSelect.value;
 
     filteredImages = allImages.filter((img) => {
-      // Filter by minimum width
       if (minWidth > 0 && img.width > 0 && img.width < minWidth) return false;
-
-      // Filter by type
       if (type !== "all" && img.type !== type) return false;
-
       return true;
     });
 
-    // Reset selection
     selectedImages.clear();
     allSelected = false;
     updateSelectAllButton();
@@ -110,7 +225,7 @@ document.addEventListener("DOMContentLoaded", () => {
       imgEl.style.display = "none";
       const placeholder = document.createElement("div");
       placeholder.className = "error-placeholder";
-      placeholder.textContent = "⚠ Load failed";
+      placeholder.textContent = "Load failed";
       card.appendChild(placeholder);
     };
 
@@ -124,7 +239,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const sizeText = document.createElement("span");
     sizeText.className = "size-text";
-    sizeText.textContent = img.width && img.height ? `${img.width}×${img.height}` : "";
+    sizeText.textContent = img.width && img.height ? `${img.width}\u00D7${img.height}` : "";
 
     info.appendChild(typeBadge);
     info.appendChild(sizeText);
@@ -182,7 +297,6 @@ document.addEventListener("DOMContentLoaded", () => {
       card.classList.add("selected");
     }
 
-    // Update allSelected state
     allSelected = selectedImages.size === filteredImages.length;
     updateSelectAllButton();
     updateFooter();
@@ -206,12 +320,15 @@ document.addEventListener("DOMContentLoaded", () => {
     loadingState.style.display = "none";
     imageGrid.style.display = "none";
     emptyState.style.display = "flex";
+    const emptyText = emptyState.querySelector("p");
+    if (emptyText && !isDeepScanMode) {
+      emptyText.textContent = "No images found on this page";
+    }
     imageCount.textContent = "0";
     totalInfo.textContent = "0 images found";
   }
 
   function showToast(message) {
-    // Remove existing toast
     const existingToast = document.querySelector(".toast");
     if (existingToast) existingToast.remove();
 
@@ -232,20 +349,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function copyImageToClipboard(imageUrl) {
     try {
-      // Fetch the image
       const response = await fetch(imageUrl);
       const blob = await response.blob();
 
-      // If it's already a PNG, write directly
       if (blob.type === "image/png") {
         await navigator.clipboard.write([
           new ClipboardItem({ "image/png": blob }),
         ]);
-        showToast("✓ Image copied to clipboard!");
+        showToast("\u2713 Image copied to clipboard!");
         return;
       }
 
-      // Otherwise, convert to PNG via canvas
       const imgEl = new Image();
       imgEl.crossOrigin = "anonymous";
       const objectUrl = URL.createObjectURL(blob);
@@ -263,30 +377,27 @@ document.addEventListener("DOMContentLoaded", () => {
             await navigator.clipboard.write([
               new ClipboardItem({ "image/png": pngBlob }),
             ]);
-            showToast("✓ Image copied to clipboard!");
+            showToast("\u2713 Image copied to clipboard!");
           } catch (err) {
-            // Fallback: copy the URL instead
             await navigator.clipboard.writeText(imageUrl);
-            showToast("✓ Image URL copied!");
+            showToast("\u2713 Image URL copied!");
           }
         }, "image/png");
       };
 
       imgEl.onerror = async () => {
         URL.revokeObjectURL(objectUrl);
-        // Fallback: copy URL
         await navigator.clipboard.writeText(imageUrl);
-        showToast("✓ Image URL copied!");
+        showToast("\u2713 Image URL copied!");
       };
 
       imgEl.src = objectUrl;
     } catch (error) {
-      // Final fallback: copy URL as text
       try {
         await navigator.clipboard.writeText(imageUrl);
-        showToast("✓ Image URL copied!");
+        showToast("\u2713 Image URL copied!");
       } catch (e) {
-        showToast("✗ Copy failed");
+        showToast("\u2717 Copy failed");
       }
     }
   }
@@ -302,7 +413,7 @@ document.addEventListener("DOMContentLoaded", () => {
         filename: filename,
       },
       () => {
-        showToast("✓ Download started!");
+        showToast("\u2713 Download started!");
       }
     );
   }
@@ -333,7 +444,6 @@ document.addEventListener("DOMContentLoaded", () => {
       imagesToDownload.push(filteredImages[index]);
     });
 
-    // Get page title for folder name
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     const folderName = tab ? tab.title || "images" : "images";
 
@@ -344,7 +454,7 @@ document.addEventListener("DOMContentLoaded", () => {
         folderName: folderName,
       },
       () => {
-        showToast(`✓ Downloading ${imagesToDownload.length} images!`);
+        showToast(`\u2713 Downloading ${imagesToDownload.length} images!`);
       }
     );
   });
@@ -354,20 +464,18 @@ document.addEventListener("DOMContentLoaded", () => {
     if (selectedImages.size === 0) return;
 
     if (selectedImages.size === 1) {
-      // Single image: copy the actual image to clipboard
       const index = [...selectedImages][0];
       await copyImageToClipboard(filteredImages[index].src);
     } else {
-      // Multiple images: copy all URLs as text
       const urls = [];
       selectedImages.forEach((index) => {
         urls.push(filteredImages[index].src);
       });
       try {
         await navigator.clipboard.writeText(urls.join("\n"));
-        showToast(`✓ ${urls.length} URLs copied!`);
+        showToast(`\u2713 ${urls.length} URLs copied!`);
       } catch (e) {
-        showToast("✗ Copy failed");
+        showToast("\u2717 Copy failed");
       }
     }
   });
@@ -376,3 +484,4 @@ document.addEventListener("DOMContentLoaded", () => {
   minWidthSelect.addEventListener("change", applyFilters);
   imageTypeSelect.addEventListener("change", applyFilters);
 });
+

@@ -3,7 +3,7 @@
   "name": "Image Extractor Pro",
   "version": "1.0.0",
   "description": "Extract and download all images from any webpage with one click",
-  "permissions": ["activeTab", "downloads"],
+  "permissions": ["activeTab", "downloads", "storage"],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {

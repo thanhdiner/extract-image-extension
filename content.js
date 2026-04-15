@@ -5,9 +5,69 @@
     if (request.action === "extractImages") {
       const images = extractAllImages();
       sendResponse({ images });
+    } else if (request.action === "deepScan") {
+      // Deep scan: auto-scroll and extract iteratively
+      deepScan(request.scrollCount, request.scrollDelay, sendResponse);
+      return true; // Keep channel open for async
+    } else if (request.action === "stopDeepScan") {
+      stopDeepScanFlag = true;
+      sendResponse({ stopped: true });
     }
     return true; // Keep message channel open for async response
   });
+
+  let stopDeepScanFlag = false;
+
+  async function deepScan(scrollCount, scrollDelay, sendResponse) {
+    stopDeepScanFlag = false;
+    const imageSet = new Set();
+    const allImages = [];
+
+    for (let i = 0; i < scrollCount; i++) {
+      if (stopDeepScanFlag) break;
+
+      // Extract current visible images
+      const currentImages = extractAllImages();
+      let newCount = 0;
+      currentImages.forEach((img) => {
+        if (!imageSet.has(img.src)) {
+          imageSet.add(img.src);
+          allImages.push(img);
+          newCount++;
+        }
+      });
+
+      // Send progress update via runtime message (popup listens)
+      try {
+        chrome.runtime.sendMessage({
+          action: "deepScanProgress",
+          current: i + 1,
+          total: scrollCount,
+          imageCount: allImages.length,
+          newInThisScroll: newCount,
+        });
+      } catch (e) {
+        // Popup may have closed
+      }
+
+      // Scroll down
+      window.scrollBy({ top: window.innerHeight, behavior: "smooth" });
+
+      // Wait for content to load
+      await new Promise((resolve) => setTimeout(resolve, scrollDelay));
+    }
+
+    // Final extraction after last scroll
+    const finalImages = extractAllImages();
+    finalImages.forEach((img) => {
+      if (!imageSet.has(img.src)) {
+        imageSet.add(img.src);
+        allImages.push(img);
+      }
+    });
+
+    sendResponse({ images: allImages, total: allImages.length });
+  }
 
   function extractAllImages() {
     const imageSet = new Set();
