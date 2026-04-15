@@ -1,8 +1,20 @@
 # Image Extractor Pro
 
-![Image Extractor Pro Interface](screenshot.png)
+![Image Extractor Pro Interface](image-demo.png)
 
 A powerful and lightweight Google Chrome extension designed to extract, filter, and download images from any webpage. It identifies not only standard HTML images but also those embedded in CSS backgrounds, responsive picture tags, video posters, and inline SVGs.
+
+## Deep Scan (Auto-Scroll)
+
+Extract images from infinite-scroll and virtual DOM pages (like Pinterest, Facebook, or Twitter).
+
+1. Toggle **Deep Scan** to the ON position.
+2. Configure **Scrolls** (how deep to scan) and **Delay** (time to wait for lazy-loading).
+3. Click **Start Scan** and watch the magic happen!
+
+![Deep Scanning Progress](image-demo-scanning.png)
+
+![Deep Scan Complete](image-demo-done-deepscan.png)
 
 ## Features
 
